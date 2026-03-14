@@ -1,0 +1,120 @@
+import tkinter as tk
+from tkinter import messagebox
+import time
+
+users = {
+    "admin": {
+        "password": "admin123",
+        "role": "admin",
+        "wrong_attempts": 0,
+        "ban_until": 0
+    },
+    "ömer": {
+        "password": "25",
+        "role": "admin",
+        "wrong_attempts": 0,
+        "ban_until": 0
+    }
+}
+
+def login():
+    username = entry_user.get()
+    password = entry_pass.get()
+
+    if username not in users:
+        messagebox.showerror("Hata", "Kullanıcı bulunamadı!")
+        return
+
+    # Ban kontrolü
+    if time.time() < users[username]["ban_until"]:
+        messagebox.showerror("Ban", "1 saat banlandınız!")
+        return
+
+    if password == users[username]["password"]:
+        users[username]["wrong_attempts"] = 0
+        messagebox.showinfo("Başarılı", "Giriş başarılı!")
+
+        if users[username]["role"] == "admin":
+            open_admin_panel()
+        else:
+            open_user_panel()
+
+    else:
+        users[username]["wrong_attempts"] += 1
+        messagebox.showerror("Hata", "Şifre yanlış!")
+
+        if users[username]["wrong_attempts"] >= 3:
+            users[username]["ban_until"] = time.time() + 3600
+            messagebox.showerror("Ban", "3 yanlış giriş! 1 saat banlandınız.")
+
+
+def open_admin_panel():
+    panel = tk.Toplevel(root)
+    panel.title("ADMIN PANEL")
+    panel.geometry("350x350")
+
+    tk.Label(panel, text="Yeni Kullanıcı Adı").pack(pady=5)
+    new_user = tk.Entry(panel)
+    new_user.pack()
+
+    tk.Label(panel, text="Şifre").pack(pady=5)
+    new_pass = tk.Entry(panel)
+    new_pass.pack()
+
+    def add_user():
+        username = new_user.get()
+        password = new_pass.get()
+
+        if username in users:
+            messagebox.showerror("Hata", "Kullanıcı zaten var!")
+            return
+
+        if username == "" or password == "":
+            messagebox.showerror("Hata", "Boş alan bırakılamaz!")
+            return
+
+        users[username] = {
+            "password": password,
+            "role": "user",
+            "wrong_attempts": 0,
+            "ban_until": 0
+        }
+
+        messagebox.showinfo("Başarılı", "Kullanıcı eklendi!")
+
+    def delete_user():
+        username = new_user.get()
+
+        if username in users and username not in ["admin", "ömer"]:
+            del users[username]
+            messagebox.showinfo("Silindi", "Kullanıcı silindi!")
+        else:
+            messagebox.showerror("Hata", "Silme başarısız!")
+
+    tk.Button(panel, text="Kullanıcı Ekle", command=add_user).pack(pady=10)
+    tk.Button(panel, text="Kullanıcı Sil", command=delete_user).pack(pady=10)
+
+
+def open_user_panel():
+    panel = tk.Toplevel(root)
+    panel.title("Kullanıcı Paneli")
+    panel.geometry("300x200")
+
+    tk.Label(panel, text="Hoşgeldin!").pack(pady=30)
+
+root = tk.Tk()
+root.title("Giriş Sistemi")
+root.geometry("300x250")
+root.resizable(False, False)
+
+tk.Label(root, text="Kullanıcı Adı").pack(pady=5)
+entry_user = tk.Entry(root)
+entry_user.pack()
+
+tk.Label(root, text="Şifre").pack(pady=5)
+entry_pass = tk.Entry(root, show="*")
+entry_pass.pack()
+
+tk.Button(root, text="Giriş Yap", command=login).pack(pady=20)
+
+root.mainloop()
